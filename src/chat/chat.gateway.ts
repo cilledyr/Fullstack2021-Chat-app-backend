@@ -13,12 +13,14 @@ import { Socket } from 'socket.io';
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer() server;
   userMap: Map<string, string> = new Map<string, string>(); //id, name
+  allMessages: string[] = [];
 
   @SubscribeMessage('message')
-  handleChatEvent(@MessageBody() data: string): string {
-    console.log(data);
-    this.server.emit('messages', data);
-    return data + 'Hello';
+  handleChatEvent(@MessageBody() message: string): string {
+    console.log(message);
+    this.allMessages.push(message);
+    this.server.emit('newMessage', message);
+    return message + 'Hello';
   }
 
   @SubscribeMessage('name')
@@ -33,8 +35,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     return 'Hello' + name;
   }
 
-  handleConnection(client: any, ...args): any {
+  handleConnection(client: Socket, ...args): any {
     console.log('Client Connect', client.id);
+    client.emit('allMessages', this.allMessages);
   }
 
   handleDisconnect(client: any): any {
