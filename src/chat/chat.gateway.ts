@@ -8,41 +8,42 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Socket } from 'socket.io';
+import { ChatService } from './shared/chat/chat.service';
 
 @WebSocketGateway()
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
+  constructor(private service: ChatService) {}
+
   @WebSocketServer() server;
-  userMap: Map<string, string> = new Map<string, string>(); //id, name
-  allMessages: string[] = [];
 
   @SubscribeMessage('message')
-  handleChatEvent(@MessageBody() message: string): string {
+  handleChatEvent(
+    @MessageBody() message: string,
+    @ConnectedSocket() client: Socket,
+  ): void {
     console.log(message);
-    this.allMessages.push(message);
-    this.server.emit('newMessage', message);
-    return message + 'Hello';
+    const newMsg = this.service.newMessage(message, client.id);
+    this.server.emit('newMessage', newMsg);
   }
 
   @SubscribeMessage('name')
   handleNameEvent(
     @MessageBody() name: string,
     @ConnectedSocket() client: Socket,
-  ): string {
-    console.log(name);
-    this.userMap.set(client.id, name);
-    this.server.emit('clients', Array.from(this.userMap.values()));
-    console.log('Map: ', this.userMap);
-    return 'Hello' + name;
+  ): void {
+    this.service.newUser(client.id, name);
+    this.server.emit('clients', this.service.getUsers());
+    //console.log('Map: ', this.userMap.values());
   }
 
   handleConnection(client: Socket, ...args): any {
     console.log('Client Connect', client.id);
-    client.emit('allMessages', this.allMessages);
+    client.emit('allMessages', this.service.getMessages());
   }
 
-  handleDisconnect(client: any): any {
-    this.userMap.delete(client.id);
-    this.server.emit('clients', this.userMap.values());
-    console.log('Client Disconnect', client.id);
+  handleDisconnect(client: Socket): any {
+    this.service.deleteUser(client.id);
+    this.server.emit('clients', this.service.getUsers());
+    //console.log('Client Disconnect', client.id);
   }
 }
