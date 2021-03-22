@@ -3,16 +3,16 @@ import { ChatUser } from '../models/chat-user.model';
 
 export const IChatServiceProvider = 'IChatServiceProvider';
 export interface IChatService {
-  newMessage(msg: string, sender: string): ChatMessage;
+  newMessage(msg: string, sender: string): Promise<ChatMessage>;
 
-  newUser(theId: string, theNickName: string): ChatUser;
+  newUser(theId: string, theNickName: string): Promise<ChatUser>;
 
-  getUsers(): ChatUser[];
+  getUsers(): Promise<ChatUser[]>;
 
-  getMessages(): ChatMessage[];
+  getMessages(): Promise<ChatMessage[]>;
 
   deleteUser(id: string): void;
 
-  updateTyping(typing: boolean, id: string): ChatUser;
+  updateTyping(typing: boolean, id: string): Promise<ChatUser>;
 
 }
