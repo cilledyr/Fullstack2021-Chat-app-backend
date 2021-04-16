@@ -16,6 +16,7 @@ import {
   IChatServiceProvider,
 } from '../../core/primary-ports/chat.service.interface';
 import { Inject } from '@nestjs/common';
+import { JoinChatDTO } from '../dtos/join-chat.dto';
 
 @WebSocketGateway()
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -46,13 +47,14 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
-  @SubscribeMessage('name')
-  async handleNameEvent(
-    @MessageBody() name: string,
+  @SubscribeMessage('joinChat')
+  async handleJoinChatEvent(
+    @MessageBody() chatClientDTO: JoinChatDTO,
     @ConnectedSocket() client: Socket,
   ): Promise<void> {
     try {
-      const thisUser = await this.chatService.newUser(client.id, name);
+      const chatClient: ChatUser = JSON.parse(JSON.stringify(chatClientDTO));
+      const thisUser = await this.chatService.newUser(chatClient);
       const allUsers = await this.chatService.getUsers();
       const theMessages = await this.chatService.getMessages();
       const welcome: WelcomeDto = {

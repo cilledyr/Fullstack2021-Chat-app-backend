@@ -9,7 +9,7 @@ import Message from './message.entity';
 
 @Entity()
 class Client {
-  @PrimaryColumn({ unique: true })
+  @PrimaryGeneratedColumn('uuid')
   public id: string;
 
   @Column({ unique: true })

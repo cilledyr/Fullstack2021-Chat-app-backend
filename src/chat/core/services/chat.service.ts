@@ -38,27 +38,46 @@ export class ChatService implements IChatService {
     this.allMessages.push(theChatMessage);
     return theChatMessage;*/
   }
-  async newUser(theId: string, theNickName: string): Promise<ChatUser> {
+  async newUser(theUser: ChatUser): Promise<ChatUser> {
     const clientFromDb = await this.clientRepository.findOne({
-      nickName: theNickName,
+      id: theUser.id,
     });
+    if (clientFromDb) {
+      return JSON.parse(JSON.stringify(clientFromDb));
+    }
+    const chatClientFoundByName = await this.clientRepository.findOne({
+      nickName: theUser.nickName,
+    });
+    if (chatClientFoundByName) {
+      throw new Error('Nickname is already used.');
+    }
+    let client = this.clientRepository.create();
+    client.nickName = theUser.nickName;
+    client.typing = false;
+    client = await this.clientRepository.save(client);
+    const newChatUser = JSON.parse(JSON.stringify(client));
+    return newChatUser;
+
+    /*const clientFromDb = await this.clientRepository.findOne(theUser.id);
     if (!clientFromDb) {
       let client = this.clientRepository.create();
-      client.nickName = theNickName;
-      client.id = theId;
+      client.nickName = theUser.nickName;
+      //client.id = theId;
       client.typing = false;
       client = await this.clientRepository.save(client);
       return client;
     }
-    if (clientFromDb.id === theId) {
-      return {
-        id: clientFromDb.id,
-        nickName: clientFromDb.nickName,
-        typing: false,
-      };
-    } else {
-      throw new Error('Nickname is already used.');
-    }
+    if (theUser.id) {
+      if (clientFromDb) {
+        return {
+          id: clientFromDb.id,
+          nickName: clientFromDb.nickName,
+          typing: false,
+        };
+      } else {
+        throw new Error('Nickname is already used.');
+      }
+    }*/
 
     /*const chatClient = this.users.find(
       (c) => c.nickName === theNickName && c.id === theId,
